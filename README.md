@@ -34,6 +34,7 @@ This repository contains all the code, documentation, and related resources for 
 - Adafruit_SCD30.h
 - Adafruit_PM25AQI
 - Adafruit_BME680  
+  and any dependencies for these libraries
 
 ## Contact
 diogo.goto@gmail.com

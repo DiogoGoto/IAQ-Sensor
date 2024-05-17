@@ -2,6 +2,7 @@ import serial
 import csv
 from datetime import datetime
 import os
+import time
 
 
 try:
@@ -34,11 +35,17 @@ except:
         writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
         writer.writeheader()
 
-SENSOR = serial.Serial("COM11", 115200)
-SENSOR.timeout = 3
+
 
 data = ''
 while(1):
+    try:
+        SENSOR = serial.Serial("COM11", 115200) 
+        SENSOR.timeout = 3
+    except:
+        SENSOR = None
+        time.sleep(0.1)
+        continue
     raw = str(SENSOR.readline())   
     data = raw[2:-5].split(",")
 

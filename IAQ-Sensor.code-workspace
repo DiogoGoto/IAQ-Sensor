@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "240516-170534-adafruit_feather_esp32s2_tft",
+			"path": "../../PlatformIO/Projects/240516-170534-adafruit_feather_esp32s2_tft"
+		}
+	],
+	"settings": {}
+}

@@ -60,13 +60,17 @@ void setup() {
   SCD30Init();
   PMInit();
   BMEInit();
-  delay(2000);
+  delay(500);
   Serial.begin(115200);
-  Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
+  //Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
+
+  // Configure wake-up source to wake up every minute (60 seconds)
+  esp_sleep_enable_timer_wakeup(60 * 1000000); // 60 seconds in microseconds
 }
 
 void loop() {
-    digitalWrite(PMSA_SET, HIGH); // Enables the PM Sensor
+  //Serial.begin(115200);
+  //digitalWrite(PMSA_SET, HIGH); // Enables the PM Sensor
   // Reads VOC Sensor
   endTime = bme.beginReading();
   if (endTime == 0) {
@@ -75,8 +79,6 @@ void loop() {
     delay(1000);
     return;
   }
-
-  
 
   // Reads  CO2 Sensorts
   if (scd30.dataReady()){
@@ -95,14 +97,14 @@ void loop() {
   }
 
   // Reads PM Sensor
-  delay(2700); 
+  delay(3000); 
   if (! aqi.read(&pmsa0031)) {
     prepWrite(2,RED); 
     tft.println("Error reading PM data");
     delay(1000); 
     return;
   }
-  digitalWrite(PMSA_SET, LOW); // Disables the Sensor
+  //digitalWrite(PMSA_SET, LOW); // Disables the Sensor
 
 
     // Print data on the display
@@ -127,7 +129,9 @@ void loop() {
     Serial.print(pmsa0031.pm25_env); Serial.print(", ");
     Serial.println(pmsa0031.pm100_env);
 
-  delay(5000);
+  delay(2000);
+  //esp_light_sleep_start();
+  esp_deep_sleep_start();
 }
 //========================================================================
 
@@ -162,7 +166,7 @@ void SCD30Init(){
   tft.setTextColor(GREEN);
   tft.println("SCD30 Found!");
   
-  scd30.setMeasurementInterval(10);
+  scd30.setMeasurementInterval(2);
   tft.setTextColor(WHITE);
   tft.print("Interval: "); 
   tft.print(scd30.getMeasurementInterval()); 
@@ -171,7 +175,7 @@ void SCD30Init(){
 
 void PMInit(){
   pinMode(PMSA_SET, OUTPUT);
-  digitalWrite(PMSA_SET, HIGH); 
+  //digitalWrite(PMSA_SET, HIGH); 
   tft.println("Iniating PM Sensor");
   delay(3000); //Wait for Sensor to boot up
     if (! aqi.begin_I2C()) {      // connect to the sensor over I2C
@@ -181,7 +185,7 @@ void PMInit(){
   }
   tft.setTextColor(GREEN);
   tft.println("PM25 found!");
-  digitalWrite(PMSA_SET, LOW); 
+  //digitalWrite(PMSA_SET, LOW); 
 }
 
 void BMEInit(){
@@ -223,6 +227,6 @@ void intro(){
   tft.setTextSize(2);
   tft.setTextColor(BLACK);
   tft.println("By: Simon Li, Sheng Li, Diogo Goto");
-  delay(2000);
+  delay(500);
 
 }
