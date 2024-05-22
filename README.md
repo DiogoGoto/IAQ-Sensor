@@ -33,7 +33,7 @@ This repository contains all the code, documentation, and related resources for 
 - Adafruit_ST7789
 - Adafruit_SCD30.h
 - Adafruit_PM25AQI
-- Adafruit_BME680  
+- [Bosch BSEC 2](https://github.com/boschsensortec/Bosch-BSEC2-Library/tree/master)  
   and any dependencies for these libraries
 
 ## Contact

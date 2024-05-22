@@ -5,7 +5,7 @@
 #include "Adafruit_ST7789.h" // Hardware-specific library for ST7789
 #include <Adafruit_SCD30.h>  // CO2 Sensor
 #include <Adafruit_PM25AQI.h> // PM Sensor
-#include "Adafruit_BME680.h" // Pressure and VOC Sensor
+#include "iaqbsec.h"
 
 
 #define PMSA_SET 13
@@ -44,7 +44,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST); // Display
 Adafruit_SCD30  scd30; //CO2 Sensor
 Adafruit_PM25AQI aqi = Adafruit_PM25AQI(); //PM Sensor
 PM25_AQI_Data pmsa0031; //Data for the PM sensor
-Adafruit_BME680 bme; // Pressure and VOC Sensor
+IaqBsec* iaqbme = new IaqBsec();// Pressure and VOC Sensor
 unsigned long endTime = 0; // BME measurment end time
 //----------------------------------------------
 
@@ -62,23 +62,14 @@ void setup() {
   BMEInit();
   delay(500);
   Serial.begin(115200);
-  //Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
+  Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
 
-  // Configure wake-up source to wake up every minute (60 seconds)
-  esp_sleep_enable_timer_wakeup(60 * 1000000); // 60 seconds in microseconds
 }
 
 void loop() {
-  //Serial.begin(115200);
-  //digitalWrite(PMSA_SET, HIGH); // Enables the PM Sensor
+
   // Reads VOC Sensor
-  endTime = bme.beginReading();
-  if (endTime == 0) {
-    prepWrite(2,RED); 
-    tft.println(F("Error start reading VOC"));
-    delay(1000);
-    return;
-  }
+  iaqbme->read();
 
   // Reads  CO2 Sensorts
   if (scd30.dataReady()){
@@ -89,15 +80,9 @@ void loop() {
       return; 
     }
   }
-  if (!bme.endReading()) {
-    prepWrite(2,RED); 
-    tft.println(F("Failed to complete reading :("));
-    delay(1000);
-    return;
-  }
 
   // Reads PM Sensor
-  delay(3000); 
+  //delay(3000); // Delay for give proper time for the sensor motor start spinning
   if (! aqi.read(&pmsa0031)) {
     prepWrite(2,RED); 
     tft.println("Error reading PM data");
@@ -109,11 +94,11 @@ void loop() {
 
     // Print data on the display
     prepWrite(2,WHITE);
-    tft.print("Temp: "); tft.print(scd30.temperature); tft.println(" C");
+    tft.print("Temp: "); tft.print(scd30.temperature); tft.println(" *C");
     tft.print("RH: "); tft.print(scd30.relative_humidity); tft.println(" %");
-    tft.print("Pressure: "); tft.print(bme.pressure / 100.0); tft.println(" hPa");
+    tft.print("Pressure: "); tft.print(iaqbme->bme.pressure / 100.0); tft.println(" hPa");
     tft.print("CO2: "); tft.print(scd30.CO2, 3); tft.println(" ppm");
-    tft.print("Gas: "); tft.print(bme.gas_resistance / 1000.0); tft.println(" KOhms");
+    tft.print("Gas: "); tft.print(iaqbme->bme.evoc); tft.println(" PPM");
     tft.print(F("PM 1.0: ")); tft.print(pmsa0031.pm10_env); tft.println(" ug/m3");
     tft.print(F("PM 2.5: ")); tft.print(pmsa0031.pm25_env); tft.println(" ug/m3");
     tft.print(F("PM 10 : ")); tft.print(pmsa0031.pm100_env); tft.println(" ug/m3");
@@ -122,16 +107,14 @@ void loop() {
     Serial.print(millis()); Serial.print(", ");
     Serial.print(scd30.temperature); Serial.print(", ");
     Serial.print(scd30.relative_humidity); Serial.print(", ");
-    Serial.print(bme.pressure / 100.0); Serial.print(", ");
+    Serial.print(iaqbme->bme.pressure / 100.0); Serial.print(", ");
     Serial.print(scd30.CO2); Serial.print(", ");
-    Serial.print(bme.gas_resistance / 1000.0); Serial.print(", ");
+    Serial.print(iaqbme->bme.evoc); Serial.print(", ");
     Serial.print(pmsa0031.pm10_env); Serial.print(", ");
     Serial.print(pmsa0031.pm25_env); Serial.print(", ");
     Serial.println(pmsa0031.pm100_env);
 
-  delay(2000);
-  //esp_light_sleep_start();
-  esp_deep_sleep_start();
+  delay(5000);
 }
 //========================================================================
 
@@ -192,21 +175,10 @@ void BMEInit(){
   tft.setTextColor(WHITE);
   tft.println(F("Iniating VOC Sensor"));
 
-  if (!bme.begin()) {
-    tft.setTextColor(RED);
-    tft.println("Could not find BME680!");
-    while (1);
-  }
+  iaqbme->setup();
 
   tft.setTextColor(GREEN);
   tft.println("BME680 found!");
-
-  // Set up oversampling and filter initialization
-  bme.setTemperatureOversampling(BME680_OS_8X);
-  bme.setHumidityOversampling(BME680_OS_2X);
-  bme.setPressureOversampling(BME680_OS_4X);
-  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
-  bme.setGasHeater(320, 150); // 320*C for 150 ms
 }
 
 void prepWrite(uint8_t size, uint16_t color){
