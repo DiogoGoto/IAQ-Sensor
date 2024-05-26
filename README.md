@@ -9,12 +9,13 @@ This repository contains all the code, documentation, and related resources for 
 - [Components](#components)
 - [Libraries](#Libraries)
 - [Contact](#contact)
+- [Issues](#issues)
 
 
 ## Functionality
 - Measures Temperature (Celsius)
 - Measures Relative Humidity (%)
-- Measures Pressure (hPa)
+- Measures Pressure (hPa) (WIP)
 - Measures Gas Resistivity (KOhms)
 - Measures PM 1.0, 2.5, 10 (ug/m3)
 
@@ -38,4 +39,7 @@ This repository contains all the code, documentation, and related resources for 
 
 ## Contact
 diogo.goto@gmail.com
+
+## Issues
+- Not reading the data from BME Sensor.
 

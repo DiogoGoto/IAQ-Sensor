@@ -1,30 +1,8 @@
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_GFX.h>    // Core graphics library
-#include "Adafruit_ST7789.h" // Hardware-specific library for ST7789
-#include <Adafruit_SCD30.h>  // CO2 Sensor
-#include <Adafruit_PM25AQI.h> // PM Sensor
-#include "iaqbsec.h"
-
-
-#define PMSA_SET 13
-
-#define SEALEVELPRESSURE_HPA (1013.25) // Constant 
-
-// Colors definitions
-// Colors are represented by 16bits values
-//----------------------------------------------
-#define BLACK 0x0000
-#define WHITE 0xFFFF
-#define RED 0xF800
-#define GREEN 0x07E0
-#define BLUE 0x001F
-#define CYAN 0x07FF
-#define MAGENTA 0xF81F
-#define YELLOW 0xFFE0
-#define ORANGE 0xFC00
-//----------------------------------------------
+#include "iaq_sensor.h" 
+/* Includes all relevant libries
+*  Makes all definitions
+*  Declare all structures
+*/
 
 
 // Function Prototypes
@@ -35,6 +13,8 @@ void PMInit(); // Initializes PM Sensor
 void BMEInit(); //Initializes VOC and Pressure Sensor
 void prepWrite(uint8_t size, uint16_t color); // Sets cursos at 0,0 and configure color and font size
 void intro(); //shows the intro to the sensor
+void showTft(); // Print data on the display
+void sendSerial();// Print data on Serial
 // ---------------------------------------------
 
 
@@ -45,10 +25,10 @@ Adafruit_SCD30  scd30; //CO2 Sensor
 Adafruit_PM25AQI aqi = Adafruit_PM25AQI(); //PM Sensor
 PM25_AQI_Data pmsa0031; //Data for the PM sensor
 IaqBsec* iaqbme = new IaqBsec();// Pressure and VOC Sensor
-unsigned long endTime = 0; // BME measurment end time
 //----------------------------------------------
 
-
+iaqData data_package; //Data collected by the sensors 
+bool result = false;
 
 // MAIN CODE
 //========================================================================
@@ -63,13 +43,12 @@ void setup() {
   delay(500);
   Serial.begin(115200);
   Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
-
 }
 
 void loop() {
-
+  result = false;
   // Reads VOC Sensor
-  iaqbme->read();
+  result = iaqbme->read();
 
   // Reads  CO2 Sensorts
   if (scd30.dataReady()){
@@ -91,29 +70,27 @@ void loop() {
   }
   //digitalWrite(PMSA_SET, LOW); // Disables the Sensor
 
+  // Collect the data from SCD 30
+  data_package.temperature = scd30.temperature;
+  data_package.humidity = scd30.relative_humidity;
+  data_package.co2 = scd30.CO2;
 
-    // Print data on the display
-    prepWrite(2,WHITE);
-    tft.print("Temp: "); tft.print(scd30.temperature); tft.println(" *C");
-    tft.print("RH: "); tft.print(scd30.relative_humidity); tft.println(" %");
-    tft.print("Pressure: "); tft.print(iaqbme->bme.pressure / 100.0); tft.println(" hPa");
-    tft.print("CO2: "); tft.print(scd30.CO2, 3); tft.println(" ppm");
-    tft.print("Gas: "); tft.print(iaqbme->bme.evoc); tft.println(" PPM");
-    tft.print(F("PM 1.0: ")); tft.print(pmsa0031.pm10_env); tft.println(" ug/m3");
-    tft.print(F("PM 2.5: ")); tft.print(pmsa0031.pm25_env); tft.println(" ug/m3");
-    tft.print(F("PM 10 : ")); tft.print(pmsa0031.pm100_env); tft.println(" ug/m3");
+  // Collect the data from PMSA 0031
+  data_package.pm1dot0 = pmsa0031.pm10_env;
+  data_package.pm2dot5 = pmsa0031.pm25_env;
+  data_package.pm10 = pmsa0031.pm100_env;
 
-    // Print data on Serial
-    Serial.print(millis()); Serial.print(", ");
-    Serial.print(scd30.temperature); Serial.print(", ");
-    Serial.print(scd30.relative_humidity); Serial.print(", ");
-    Serial.print(iaqbme->bme.pressure / 100.0); Serial.print(", ");
-    Serial.print(scd30.CO2); Serial.print(", ");
-    Serial.print(iaqbme->bme.evoc); Serial.print(", ");
-    Serial.print(pmsa0031.pm10_env); Serial.print(", ");
-    Serial.print(pmsa0031.pm25_env); Serial.print(", ");
-    Serial.println(pmsa0031.pm100_env);
+  // Collect the data from BME 688
+  data_package.gasTemperature = iaqbme->bme.temperature;
+  data_package.gasHumidity= iaqbme->bme.humidity;
+  data_package.gasPressure  = iaqbme->bme.pressure/100.0; //Convert to hPa
+  data_package.gasResistance = iaqbme->bme.gas_resistance/1000.0; //converto to KOhms
+  data_package.gasIaq = iaqbme->bme.iaq;
+  data_package.gaseVoc = iaqbme->bme.evoc;
+  data_package.gaseCo2 = iaqbme->bme.eco2;
 
+  showTft();
+  sendSerial();
   delay(5000);
 }
 //========================================================================
@@ -121,7 +98,7 @@ void loop() {
 
 // Function Definitions
 //----------------------------------------------
-void displayInit(){
+void displayInit(){ // Initializes Built-in Display
   // turn on backlite
     pinMode(TFT_BACKLITE, OUTPUT);
     digitalWrite(TFT_BACKLITE, HIGH);
@@ -138,7 +115,7 @@ void displayInit(){
   // put your setup code here, to run once:
 }
 
-void SCD30Init(){
+void SCD30Init(){ // Initializes CO2 Sensor
   // Try to initialize SCD30
   tft.println("Iniating CO2 Sensor");
   if (!scd30.begin()) {
@@ -156,7 +133,7 @@ void SCD30Init(){
   tft.println(" S");
 }
 
-void PMInit(){
+void PMInit(){ // Initializes PM Sensor
   pinMode(PMSA_SET, OUTPUT);
   //digitalWrite(PMSA_SET, HIGH); 
   tft.println("Iniating PM Sensor");
@@ -171,7 +148,7 @@ void PMInit(){
   //digitalWrite(PMSA_SET, LOW); 
 }
 
-void BMEInit(){
+void BMEInit(){ //Initializes VOC and Pressure Sensor
   tft.setTextColor(WHITE);
   tft.println(F("Iniating VOC Sensor"));
 
@@ -181,14 +158,14 @@ void BMEInit(){
   tft.println("BME680 found!");
 }
 
-void prepWrite(uint8_t size, uint16_t color){
+void prepWrite(uint8_t size, uint16_t color){ // Sets cursos at 0,0 and configure color and font size
   tft.fillScreen(BLACK);
   tft.setTextSize(size);
   tft.setCursor(0, 0);
   tft.setTextColor(color);
 }
 
-void intro(){
+void intro(){ //shows the intro to the sensor
   tft.fillScreen(WHITE);
   tft.setCursor(0, tft.height()/2 -30);
   tft.setTextSize(4);
@@ -200,5 +177,36 @@ void intro(){
   tft.setTextColor(BLACK);
   tft.println("By: Simon Li, Sheng Li, Diogo Goto");
   delay(500);
+
+}
+
+void showTft(){ // Print data on the display
+  prepWrite(2,WHITE);
+  tft.print("Temp  : ");  tft.print(data_package.temperature); tft.println(" *C");
+  tft.print("RH    : ");  tft.print(data_package.humidity);    tft.println(" %");
+  tft.print("Pres  : ");  tft.print(iaqbme->bme.pressure/100.0); tft.println(" hPa");
+  tft.print("CO2   : ");  tft.print(data_package.co2);         tft.println(" ppm");
+  tft.print("eVOC  : ");  tft.print(data_package.gaseVoc);     tft.println(" PPM");
+  tft.print("PM 1.0: ");  tft.print(data_package.pm1dot0);     tft.println(" ug/m3");
+  tft.print("PM 2.5: ");  tft.print(data_package.pm2dot5);     tft.println(" ug/m3");
+  tft.print("PM 10 : ");  tft.print(data_package.pm10);        tft.println(" ug/m3");
+}
+
+void sendSerial(){// Print data on Serial
+  Serial.print(millis());                    Serial.print(", ");
+  Serial.print(data_package.temperature);    Serial.print(", ");
+  Serial.print(data_package.humidity);       Serial.print(", ");
+  Serial.print(data_package.gasPressure);    Serial.print(", ");
+  Serial.print(data_package.co2);            Serial.print(", ");
+  Serial.print(data_package.gaseVoc);        Serial.print(", ");
+  Serial.print(data_package.pm1dot0);        Serial.print(", ");
+  Serial.print(data_package.pm2dot5);        Serial.print("| ");
+  Serial.print(result);                      Serial.print(" |");
+  Serial.print(data_package.gasTemperature); Serial.print(", ");
+  Serial.print(data_package.gasHumidity);    Serial.print(", ");
+  Serial.print(data_package.gasResistance);  Serial.print(", ");
+  Serial.print(data_package.gaseVoc);        Serial.print(", ");
+  Serial.print(data_package.gaseCo2);        Serial.print(", ");
+  Serial.print(data_package.gasIaq);         Serial.print('\n');
 
 }

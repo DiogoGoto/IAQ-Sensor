@@ -4,12 +4,12 @@ import numpy as np
 import os 
 
 try:
-    os.mkdir("AIQ_Research")
+    os.mkdir("Data_Logging")
 except:
     pass
 
-os.chdir("AIQ_Research")
-UNITS = ["Samples", "Temperature (C)", "Humidity (%)", "Pressure (hPa)", "CO2 (PPM)", "Gas Resistivity (KOhms)", "PM 1.0 (ug/m3)", "PM 2.5 (ug/m3)", "PM 10 (ug/m3)"]
+os.chdir("Data_Logging")
+UNITS = ["Samples", "Temperature (C)", "Humidity (%)", "Pressure (hPa)", "CO2 (PPM)", "eVOCs(PPM)", "PM 1.0 (ug/m3)", "PM 2.5 (ug/m3)", "PM 10 (ug/m3)"]
 
 raw = np.array(pd.read_csv("Sensor_data.csv"))
 
@@ -19,7 +19,7 @@ data = {
         "RH": 0,
         "Pres": 0,
         "CO2": 0,
-        "Gas": 0,
+        "VOC": 0,
         "PM1": 0,
         "PM25": 0, 
         "PM10" :0

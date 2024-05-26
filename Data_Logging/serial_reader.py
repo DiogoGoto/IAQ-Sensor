@@ -6,14 +6,14 @@ import time
 
 
 try:
-    os.mkdir("AIQ_Research")
+    os.mkdir("Data_Logging")
 except:
     pass
 
-os.chdir("AIQ_Research")
+os.chdir("Data_Logging")
 
 
-FIELDNAMES = ["Time", "Temp", "RH", "Pres", "CO2", "Gas", "PM1", "PM25", "PM10"]
+FIELDNAMES = ["Time", "Temp", "RH", "Pres", "CO2", "VOC", "PM1", "PM25", "PM10"]
 
 row = {
     "Time": 0,
@@ -21,7 +21,7 @@ row = {
     "RH": 0,
     "Pres": 0,
     "CO2": 0,
-    "Gas": 0,
+    "VOC": 0,
     "PM1": 0,
     "PM25": 0, 
     "PM10" :0
@@ -36,16 +36,12 @@ except:
         writer.writeheader()
 
 
+SENSOR = serial.Serial("COM11", 115200) 
+SENSOR.timeout = 3
 
 data = ''
 while(1):
-    try:
-        SENSOR = serial.Serial("COM11", 115200) 
-        SENSOR.timeout = 3
-    except:
-        SENSOR = None
-        time.sleep(0.1)
-        continue
+    
     raw = str(SENSOR.readline())   
     data = raw[2:-5].split(",")
 
