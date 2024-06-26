@@ -36,14 +36,18 @@ except:
         writer.writeheader()
 
 
-SENSOR = serial.Serial("COM11", 115200) 
+SENSOR = serial.Serial("COM7", 115200) 
 SENSOR.timeout = 3
 
 data = ''
 while(1):
-    
-    raw = str(SENSOR.readline())   
-    data = raw[2:-5].split(",")
+    #T,RH,P,CO2,VOCs,PM1.0,PM2.5,PM10
+    raw = str(SENSOR.readline())
+    if ',' not in raw:
+        continue
+    data = [0] + raw[2:-7].split(",")
+    print(raw)
+    print(data)
 
     for i, parameter in enumerate(data):
         row[FIELDNAMES[i]] = data[i]

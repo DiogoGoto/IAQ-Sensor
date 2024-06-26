@@ -15,6 +15,7 @@ void prepWrite(uint8_t size, uint16_t color); // Sets cursos at 0,0 and configur
 void intro(); //shows the intro to the sensor
 void showTft(); // Print data on the display
 void sendSerial();// Print data on Serial
+void sendInterface(); //Send data to Dr. Sheng's Part through Serial
 // ---------------------------------------------
 
 
@@ -25,15 +26,17 @@ Adafruit_SCD30  scd30; //CO2 Sensor
 Adafruit_PM25AQI aqi = Adafruit_PM25AQI(); //PM Sensor
 PM25_AQI_Data pmsa0031; //Data for the PM sensor
 IaqBsec* iaqbme = new IaqBsec();// Pressure and VOC Sensor
+HardwareSerial Interface(1); //Data Interface 
 //----------------------------------------------
 
 iaqData data_package; //Data collected by the sensors 
-bool result = false;
+String message = "";
+unsigned long  last_time = millis();
 
 // MAIN CODE
 //========================================================================
 void setup() {
-  // Initilazion sequence
+  // Initilization sequence
   displayInit();
   intro();
   prepWrite(2,WHITE);
@@ -43,13 +46,15 @@ void setup() {
   delay(500);
   Serial.begin(115200);
   Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
+  Interface.begin(9600, SERIAL_8N1, RXD2, TXD2);
 }
 
 void loop() {
-  result = false;
   // Reads VOC Sensor
-  result = iaqbme->read();
+  iaqbme->read();
 
+
+  if(millis()-last_time > 5000){
   // Reads  CO2 Sensorts
   if (scd30.dataReady()){
     if (!scd30.read()){
@@ -91,7 +96,10 @@ void loop() {
 
   showTft();
   sendSerial();
-  delay(5000);
+  sendInterface();
+  last_time = millis();
+  }
+  delay(500);
 }
 //========================================================================
 
@@ -200,13 +208,28 @@ void sendSerial(){// Print data on Serial
   Serial.print(data_package.co2);            Serial.print(", ");
   Serial.print(data_package.gaseVoc);        Serial.print(", ");
   Serial.print(data_package.pm1dot0);        Serial.print(", ");
-  Serial.print(data_package.pm2dot5);        Serial.print("| ");
-  Serial.print(result);                      Serial.print(" |");
+  Serial.print(data_package.pm2dot5);        Serial.print(", ");
+  Serial.print(data_package.pm10);           Serial.print("| ");
   Serial.print(data_package.gasTemperature); Serial.print(", ");
   Serial.print(data_package.gasHumidity);    Serial.print(", ");
   Serial.print(data_package.gasResistance);  Serial.print(", ");
   Serial.print(data_package.gaseVoc);        Serial.print(", ");
   Serial.print(data_package.gaseCo2);        Serial.print(", ");
   Serial.print(data_package.gasIaq);         Serial.print('\n');
+
+}
+
+void sendInterface(){
+  //T,RH,P,CO2,VOCs,PM1.0,PM2.5,PM10
+   message = String(data_package.temperature) + "," +
+            String(data_package.humidity)     + "," +
+            String(data_package.gasPressure)  + "," +
+            String(data_package.co2)          + "," + 
+            String(data_package.gaseVoc)      + "," + 
+            String(data_package.pm1dot0)      + "," + 
+            String(data_package.pm2dot5)      + "," + 
+            String(data_package.pm10);
+  
+  Interface.println(message);
 
 }
