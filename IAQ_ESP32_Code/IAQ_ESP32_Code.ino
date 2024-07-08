@@ -53,51 +53,53 @@ void loop() {
   // Reads VOC Sensor
   iaqbme->read();
 
+  if(millis()-last_time > SAMPLING_PERIOD-5000) //55 seconds
+    digitalWrite(PMSA_SET, HIGH); //Enables the PM Sensor 5 seconds before measuring  
 
-  if(millis()-last_time > 5000){
-  // Reads  CO2 Sensorts
-  if (scd30.dataReady()){
-    if (!scd30.read()){
-      prepWrite(2,RED); 
-      tft.println("Error reading CO2 data");
-      delay(1000);
-      return; 
+  if(millis()-last_time > SAMPLING_PERIOD){
+    // Reads  CO2 Sensorts
+    if (scd30.dataReady()){
+      if (!scd30.read()){
+        prepWrite(2,RED); 
+        tft.println("Error reading CO2 data");
+        delay(1000);
+        return; 
+      }
     }
-  }
 
-  // Reads PM Sensor
-  //delay(3000); // Delay for give proper time for the sensor motor start spinning
-  if (! aqi.read(&pmsa0031)) {
-    prepWrite(2,RED); 
-    tft.println("Error reading PM data");
-    delay(1000); 
-    return;
-  }
-  //digitalWrite(PMSA_SET, LOW); // Disables the Sensor
+    // Reads PM Sensor
+    //delay(3000); // Delay for give proper time for the sensor motor start spinning
+    if (! aqi.read(&pmsa0031)) {
+      prepWrite(2,RED); 
+      tft.println("Error reading PM data");
+      delay(1000); 
+      return;
+    }
+    digitalWrite(PMSA_SET, LOW); // Disables the Sensor
 
-  // Collect the data from SCD 30
-  data_package.temperature = scd30.temperature;
-  data_package.humidity = scd30.relative_humidity;
-  data_package.co2 = scd30.CO2;
+    // Collect the data from SCD 30
+    data_package.temperature = scd30.temperature;
+    data_package.humidity = scd30.relative_humidity;
+    data_package.co2 = scd30.CO2;
 
-  // Collect the data from PMSA 0031
-  data_package.pm1dot0 = pmsa0031.pm10_env;
-  data_package.pm2dot5 = pmsa0031.pm25_env;
-  data_package.pm10 = pmsa0031.pm100_env;
+    // Collect the data from PMSA 0031
+    data_package.pm1dot0 = pmsa0031.pm10_env;
+    data_package.pm2dot5 = pmsa0031.pm25_env;
+    data_package.pm10 = pmsa0031.pm100_env;
 
-  // Collect the data from BME 688
-  data_package.gasTemperature = iaqbme->bme.temperature;
-  data_package.gasHumidity= iaqbme->bme.humidity;
-  data_package.gasPressure  = iaqbme->bme.pressure/100.0; //Convert to hPa
-  data_package.gasResistance = iaqbme->bme.gas_resistance/1000.0; //converto to KOhms
-  data_package.gasIaq = iaqbme->bme.iaq;
-  data_package.gaseVoc = iaqbme->bme.evoc;
-  data_package.gaseCo2 = iaqbme->bme.eco2;
+    // Collect the data from BME 688
+    data_package.gasTemperature = iaqbme->bme.temperature;
+    data_package.gasHumidity= iaqbme->bme.humidity;
+    data_package.gasPressure  = iaqbme->bme.pressure/100.0; //Convert to hPa
+    data_package.gasResistance = iaqbme->bme.gas_resistance/1000.0; //converto to KOhms
+    data_package.gasIaq = iaqbme->bme.iaq;
+    data_package.gaseVoc = iaqbme->bme.evoc;
+    data_package.gaseCo2 = iaqbme->bme.eco2;
 
-  showTft();
-  sendSerial();
-  sendInterface();
-  last_time = millis();
+    showTft();
+    sendSerial();
+    sendInterface();
+    last_time = millis();
   }
   delay(500);
 }
@@ -134,7 +136,7 @@ void SCD30Init(){ // Initializes CO2 Sensor
   tft.setTextColor(GREEN);
   tft.println("SCD30 Found!");
   
-  scd30.setMeasurementInterval(2);
+  scd30.setMeasurementInterval(60);
   tft.setTextColor(WHITE);
   tft.print("Interval: "); 
   tft.print(scd30.getMeasurementInterval()); 
@@ -143,7 +145,7 @@ void SCD30Init(){ // Initializes CO2 Sensor
 
 void PMInit(){ // Initializes PM Sensor
   pinMode(PMSA_SET, OUTPUT);
-  //digitalWrite(PMSA_SET, HIGH); 
+  digitalWrite(PMSA_SET, HIGH); 
   tft.println("Iniating PM Sensor");
   delay(3000); //Wait for Sensor to boot up
     if (! aqi.begin_I2C()) {      // connect to the sensor over I2C
@@ -153,7 +155,7 @@ void PMInit(){ // Initializes PM Sensor
   }
   tft.setTextColor(GREEN);
   tft.println("PM25 found!");
-  //digitalWrite(PMSA_SET, LOW); 
+  digitalWrite(PMSA_SET, LOW); 
 }
 
 void BMEInit(){ //Initializes VOC and Pressure Sensor
@@ -209,27 +211,28 @@ void sendSerial(){// Print data on Serial
   Serial.print(data_package.gaseVoc);        Serial.print(", ");
   Serial.print(data_package.pm1dot0);        Serial.print(", ");
   Serial.print(data_package.pm2dot5);        Serial.print(", ");
-  Serial.print(data_package.pm10);           Serial.print("| ");
+  Serial.print(data_package.pm10);           //Serial.print("| ");
+  /*
   Serial.print(data_package.gasTemperature); Serial.print(", ");
   Serial.print(data_package.gasHumidity);    Serial.print(", ");
   Serial.print(data_package.gasResistance);  Serial.print(", ");
   Serial.print(data_package.gaseVoc);        Serial.print(", ");
   Serial.print(data_package.gaseCo2);        Serial.print(", ");
   Serial.print(data_package.gasIaq);         Serial.print('\n');
-
+*/
 }
 
 void sendInterface(){
-  //T,RH,P,CO2,VOCs,PM1.0,PM2.5,PM10
-   message = String(data_package.temperature) + "," +
-            String(data_package.humidity)     + "," +
-            String(data_package.gasPressure)  + "," +
-            String(data_package.co2)          + "," + 
-            String(data_package.gaseVoc)      + "," + 
-            String(data_package.pm1dot0)      + "," + 
-            String(data_package.pm2dot5)      + "," + 
-            String(data_package.pm10);
-  
+  //T=26.24,RH=28.83,P=886.46,CO2=496.52,VOC=0.58,PM1.0=0.00,PM2.5=0.00,PM10=0.00,[\n]
+   message = "T="                              +
+             String(data_package.temperature)  + ",RH=" +
+             String(data_package.humidity)     + ",P=" +
+             String(data_package.gasPressure)  + ",CO2=" +
+             String(data_package.co2)          + ",VOC=" + 
+             String(data_package.gaseVoc)      + ",PM1.0=" + 
+             String(data_package.pm1dot0)      + ",PM2.5=" + 
+             String(data_package.pm2dot5)      + ",PM10="+ 
+             String(data_package.pm10)        + '\n';
   Interface.println(message);
 
 }

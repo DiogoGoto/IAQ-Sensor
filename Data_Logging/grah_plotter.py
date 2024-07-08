@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os 
+from datetime import datetime
 
 try:
     os.mkdir("Data_Logging")
@@ -34,6 +35,15 @@ try:
 except:
     pass
 
+os.chdir("Graphs")
+date = datetime.now().strftime("%Y_%m_%d")
+try:
+    os.mkdir(date)
+except:
+    pass
+os.chdir(date)
+
+
 fig = plt.figure(figsize=(12,6))
 for i, parameter in enumerate(data):
     if i == 0:
@@ -45,5 +55,5 @@ for i, parameter in enumerate(data):
     plt.text(len(data[parameter])  ,data[parameter][-1],data["Time"][-1],{"size": 8})
     plt.title(f"{UNITS[i]}")
     plt.grid(True)
-    plt.savefig(f"Graphs//{parameter}.png")
+    plt.savefig(f"{parameter}.png")
     plt.cla()

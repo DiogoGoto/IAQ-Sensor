@@ -19,6 +19,7 @@
 #define RXD2 16
 #define TXD2 17
 
+#define SAMPLING_PERIOD 60000 // 1 minutes sampling period
 #define SEALEVELPRESSURE_HPA (1013.25) // Constant 
 //-----------------------------------------------------------------------
 
