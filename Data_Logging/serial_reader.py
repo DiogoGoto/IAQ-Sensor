@@ -15,7 +15,7 @@ os.chdir("Data_Logging")
 
 
 FIELDNAMES = ["Time", "Temp", "RH", "Pres", "CO2", "VOC", "PM1", "PM25", "PM10"]
-FIELDNAMES_C = ["Time", "Temp", "RH", "Pres", "VOC", "CO2", "PM25"]
+FIELDNAMES_C = ["Time", "Temp", "RH", "Pres", "CO2", "VOC", "PM1", "PM25", "PM10"]
 
 row = {
     "Time": 0,
@@ -34,9 +34,11 @@ row_C = {
     "Temp": 0,
     "RH": 0,
     "Pres": 0,
-    "VOC": 0,
     "CO2": 0,
+    "VOC": 0,
+    "PM1": 0,
     "PM25": 0, 
+    "PM10" :0 
 }
 
 try:
@@ -56,8 +58,8 @@ except:
         writer.writeheader()
 
 
-SENSOR = serial.Serial("COM11", 115200) 
-COMMUNICATION = serial.Serial("COM14", 9600)
+SENSOR = serial.Serial("COM14", 115200) 
+COMMUNICATION = serial.Serial("COM11", 115200)
 SENSOR.timeout = 3
 COMMUNICATION.timeout = 3
 
@@ -72,13 +74,12 @@ while(1):
     raw_C = COMMUNICATION.readlines()
     if len(raw_C) > 6:
         try:
-            data_C = raw_C[6].decode("utf-8").split(",")[2:]
-            data_C[-1] = data_C[-1][:-2]
-            data_C = [i[i.find(':')+1:-1] for i in data_C]
-            data_C[0] = data_C[0][1:]
+            data_C = raw_C[0].decode("utf-8").split(",")[:-1]
+            data_C = [i[i.find('=')+1:] for i in data_C]
 
             for i, parameter in enumerate(data_C):
-                row_C[FIELDNAMES_C[i]] = data_C[i]
+                row_C[FIELDNAMES_C[i+1]] = data_C[i]
+            row_C["Time"] = datetime.now().strftime("%Y_%m_%d - %I:%M:%S %p")
             
             with open("Communication_data.csv", "a") as file:
                 writer = csv.DictWriter(file, fieldnames=FIELDNAMES_C)
@@ -107,16 +108,16 @@ while(1):
         for parameter in FIELDNAMES_C[1:]:
             try:
                 if not isclose(float(row[parameter]), float(row_C[parameter]), rel_tol=0.01):
-                    print(f"Data Mismatch: {FIELDNAMES[i]}")
+                    print(f"Data Mismatch: {parameter}")
                     print(f"Sensor Data: {row[parameter]}")
                     print(f"Communication Data: {row_C[parameter]}")
                     print("\n")
                     with open("Mismatch.csv", "a") as file:
                         writer = csv.writer(file)
-                        writer.writerow([FIELDNAMES[i], row[parameter], row_C[parameter], datetime.now().strftime("%Y_%m_%d - %I:%M:%S %p")])
+                        writer.writerow([parameter, row[parameter], row_C[parameter], datetime.now().strftime("%Y_%m_%d - %I:%M:%S %p")])
                 #print("Data Logged")
             except:
-                print(f'Error in Data: {row[parameter]=}, {row_C[parameter]=}')
+                print(f'Error in {parameter}: Sensor = {row[parameter]=}, Communication =  {row_C[parameter]=}')
         FLAG_S = False
         FLAG_C = False
     

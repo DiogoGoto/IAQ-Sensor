@@ -1,4 +1,5 @@
 #include "iaq_sensor.h" 
+std::string SENSOR_NAME = "IAQ_Sensor_2";
 /* Includes all relevant libries
 *  Makes all definitions
 *  Declare all structures
@@ -16,6 +17,7 @@ void intro(); //shows the intro to the sensor
 void showTft(); // Print data on the display
 void sendSerial();// Print data on Serial
 void sendInterface(); //Send data to Dr. Sheng's Part through Serial
+void sendBLE(); //Sends data to Mobile Devices
 // ---------------------------------------------
 
 
@@ -30,7 +32,7 @@ HardwareSerial Interface(1); //Data Interface
 //----------------------------------------------
 
 iaqData data_package; //Data collected by the sensors 
-std::string message = ""; //String to send the IAQ data to the Communication unit
+String message = ""; //String to send the IAQ data to the Communication unit
 unsigned long  last_time = millis(); // Timer collect the data every minute
 
 //BLE Variables
@@ -38,14 +40,17 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
+std::string ble_msg = "";
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
+      Serial.println("Connect");
     };
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+      Serial.println("Disconnect");
     }
 };
 
@@ -53,9 +58,9 @@ class MyServerCallbacks: public BLEServerCallbacks {
 // MAIN CODE
 //========================================================================
 void setup() {
+  // Initilization sequence
   Serial.begin(115200);
   Serial.println("Time, Temp, RH, Pres, CO2, Gas, PM1, PM25, PM10");
-  // Initilization sequence
   displayInit();
   intro();
   prepWrite(2,WHITE);
@@ -67,7 +72,7 @@ void setup() {
 
 
   //BLE Setup
-  BLEDevice::init("ESP32"); // Create the BLE Device
+  BLEDevice::init(SENSOR_NAME); // Create the BLE Device
   pServer = BLEDevice::createServer(); // Create the BLE Server
   pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);// Create the BLE Service
@@ -143,10 +148,12 @@ void loop() {
     showTft();
     sendSerial();
     sendInterface();
+    sendBLE();
     last_time = millis();
   }
   // disconnecting
     if (!deviceConnected && oldDeviceConnected) {
+        delay(500);
         pServer->startAdvertising(); // restart advertising
         Serial.println("start advertising");
         oldDeviceConnected = deviceConnected;
@@ -267,7 +274,7 @@ void sendSerial(){// Print data on Serial
   Serial.print(data_package.gaseVoc);        Serial.print(", ");
   Serial.print(data_package.pm1dot0);        Serial.print(", ");
   Serial.print(data_package.pm2dot5);        Serial.print(", ");
-  Serial.print(data_package.pm10);           //Serial.print("| ");
+  Serial.println(data_package.pm10);           //Serial.print("| ");
   /*
   Serial.print(data_package.gasTemperature); Serial.print(", ");
   Serial.print(data_package.gasHumidity);    Serial.print(", ");
@@ -290,10 +297,12 @@ void sendInterface(){
              String(data_package.pm2dot5)      + ",PM10="+ 
              String(data_package.pm10)        + '\n';
   Interface.println(message);
+}
 
+void sendBLE(){
   // notify changed value
     if (deviceConnected) {
-        pCharacteristic->setValue(message);
+        pCharacteristic->setValue(message.c_str());
         pCharacteristic->notify();
         delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
     }

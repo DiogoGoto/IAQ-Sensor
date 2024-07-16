@@ -16,6 +16,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <vector>
 //-----------------------------------------------------------------------
 
 // Definitions
@@ -78,6 +79,7 @@ typedef struct IAQ_DATA
   float gaseVoc=0.0;
   float gaseCo2=0.0;
 }iaqData;
+
 
 
 #endif
