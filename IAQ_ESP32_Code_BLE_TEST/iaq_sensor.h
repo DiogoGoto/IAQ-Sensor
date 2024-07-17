@@ -35,11 +35,16 @@
 
 #define SAMPLING_PERIOD 60000 // 1 minutes sampling period
 #define SEALEVELPRESSURE_HPA (1013.25) // Constant 
+#define MAX_CONNECTIONS 4
 //-----------------------------------------------------------------------
 
 // Bluetooth UUIDs
-#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define SERVICE_UUID         "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID1  "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define CHARACTERISTIC_UUID2 "77376cda-d67f-4c80-981e-7f7cd032c684"
+#define CHARACTERISTIC_UUID3 "3ea2d89f-5e58-454f-82ad-6fe705428db2"
+#define CHARACTERISTIC_UUID4 "a0ea85f6-86ef-427b-8743-446f01fc3421"
+
 
 
 // Colors definitions
@@ -80,6 +85,13 @@ typedef struct IAQ_DATA
   float gaseCo2=0.0;
 }iaqData;
 
-
+typedef struct BLE_DEVICE
+{
+  uint8_t id = 0;
+  BLEClient* client = NULL;
+  bool status = false;
+  uint16_t conn_id = -1;
+  std::string receivedString = "";
+}DEVICE;
 
 #endif

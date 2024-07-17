@@ -18,6 +18,9 @@ void showTft(); // Print data on the display
 void sendSerial();// Print data on Serial
 void sendInterface(); //Send data to Dr. Sheng's Part through Serial
 void sendBLE(); //Sends data to Mobile Devices
+int getConnectedDevicesCount(); //return how many clients are connected
+int getFreeClientSlot(); //Finds a slot for to connect a new device
+int getClientSlotByConnId(uint16_t conn_id); //finds client by their connection ID
 // ---------------------------------------------
 
 
@@ -38,23 +41,58 @@ unsigned long  last_time = millis(); // Timer collect the data every minute
 //BLE Variables
 BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
+DEVICE ble_devices[MAX_CONNECTIONS]; //initializes all variables to connect to multiple devices
+/*
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
-std::string ble_msg = "";
+std::string receivedString = "";
+*/
 
 class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-      Serial.println("Connect");
+    void onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
+      int idx = getFreeClientSlot();
+      if (idx != -1) {
+            ble_devices[idx].conn_id = param->connect.conn_id;
+            ble_devices[idx].status = true;
+            Serial.printf("Device connected, connection ID: %d\n", param->connect.conn_id);
+        }
+      // Continue advertising if not at max connections
+        if (getConnectedDevicesCount() < MAX_CONNECTIONS) {
+            pServer->startAdvertising();
+            Serial.println("Continuing to advertise.");
+        }
     };
 
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-      Serial.println("Disconnect");
+    void onDisconnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
+        int idx = getClientSlotByConnId(param->disconnect.conn_id);
+        if (idx != -1) {
+            ble_devices[idx].conn_id = 0;
+            ble_devices[idx].status = false;
+            Serial.printf("Device disconnected, connection ID: %d\n", param->disconnect.conn_id);
+        }
+        if (getConnectedDevicesCount() < MAX_CONNECTIONS) {
+            pServer->startAdvertising();
+            Serial.println("Device disconnected, starting advertising.");
+        }
+        
+    }
+
+};
+/*
+// Callback class to handle characteristic events
+class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic* pCharacteristic) {
+        std::string value = pCharacteristic->getValue();
+        if (value.length() > 0) {
+            Serial.print("Received string: ");
+            Serial.println(value.c_str());
+            if (value == "disconnect") {
+                disconnectClient();
+            }
+        }
     }
 };
-
-
+*/
 // MAIN CODE
 //========================================================================
 void setup() {
@@ -76,16 +114,17 @@ void setup() {
   pServer = BLEDevice::createServer(); // Create the BLE Server
   pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);// Create the BLE Service
-
+  
   // Create a BLE Characteristic
   pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID,
+                      CHARACTERISTIC_UUID1,
                       BLECharacteristic::PROPERTY_READ   |
                       BLECharacteristic::PROPERTY_WRITE  |
                       BLECharacteristic::PROPERTY_NOTIFY |
                       BLECharacteristic::PROPERTY_INDICATE
                     );
 
+  //pCharacteristic->setCallbacks(new MyCharacteristicCallbacks());
   pCharacteristic->addDescriptor(new BLE2902());// Create a BLE Descriptor
   pService->start(); // Start the service
 
@@ -94,7 +133,7 @@ void setup() {
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(false);
   pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
-  BLEDevice::startAdvertising();
+  pServer->getAdvertising()->start();
   Serial.println("Waiting a client connection to notify...");
 }
 
@@ -151,19 +190,6 @@ void loop() {
     sendBLE();
     last_time = millis();
   }
-  // disconnecting
-    if (!deviceConnected && oldDeviceConnected) {
-        delay(500);
-        pServer->startAdvertising(); // restart advertising
-        Serial.println("start advertising");
-        oldDeviceConnected = deviceConnected;
-    }
-    // connecting
-    if (deviceConnected && !oldDeviceConnected) {
-        // do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
-    }
-  
   delay(500);
 }
 //========================================================================
@@ -255,7 +281,7 @@ void intro(){ //shows the intro to the sensor
 
 void showTft(){ // Print data on the display
   prepWrite(2,WHITE);
-  tft.print("Temp  : ");  tft.print(data_package.temperature); tft.println(" *C");
+  tft.print("Temp  : ");  tft.print(data_package.gasTemperature); tft.println(" *C");
   tft.print("RH    : ");  tft.print(data_package.humidity);    tft.println(" %");
   tft.print("Pres  : ");  tft.print(iaqbme->bme.pressure/100.0); tft.println(" hPa");
   tft.print("CO2   : ");  tft.print(data_package.co2);         tft.println(" ppm");
@@ -267,7 +293,7 @@ void showTft(){ // Print data on the display
 
 void sendSerial(){// Print data on Serial
   Serial.print(millis());                    Serial.print(", ");
-  Serial.print(data_package.temperature);    Serial.print(", ");
+  Serial.print(data_package.gasTemperature);    Serial.print(", ");
   Serial.print(data_package.humidity);       Serial.print(", ");
   Serial.print(data_package.gasPressure);    Serial.print(", ");
   Serial.print(data_package.co2);            Serial.print(", ");
@@ -288,7 +314,7 @@ void sendSerial(){// Print data on Serial
 void sendInterface(){
   //T=26.24,RH=28.83,P=886.46,CO2=496.52,VOC=0.58,PM1.0=0.00,PM2.5=0.00,PM10=0.00,[\n]
    message = "T="                              +
-             String(data_package.temperature)  + ",RH=" +
+             String(data_package.gasTemperature)  + ",RH=" +
              String(data_package.humidity)     + ",P=" +
              String(data_package.gasPressure)  + ",CO2=" +
              String(data_package.co2)          + ",VOC=" + 
@@ -301,10 +327,39 @@ void sendInterface(){
 
 void sendBLE(){
   // notify changed value
-    if (deviceConnected) {
+  for(int i =0; i< MAX_CONNECTIONS; i++){
+    if (ble_devices[i].status) {
         pCharacteristic->setValue(message.c_str());
         pCharacteristic->notify();
         delay(3); // bluetooth stack will go into congestion, if too many packets are sent, in 6 hours test i was able to go as low as 3ms
     }
+  }
 
+}
+
+int getConnectedDevicesCount() {
+    int count = 0;
+    for (int i = 0; i < MAX_CONNECTIONS; i++) {
+        if (ble_devices[i].status) 
+            count++;
+    }
+    return count;
+}
+
+int getFreeClientSlot() {
+    for (int i = 0; i < MAX_CONNECTIONS; i++) {
+        if (!ble_devices[i].status) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int getClientSlotByConnId(uint16_t conn_id) {
+    for (int i = 0; i < MAX_CONNECTIONS; i++) {
+        if (ble_devices[i].status && ble_devices[i].conn_id == conn_id) {
+            return i;
+        }
+    }
+    return -1;
 }
