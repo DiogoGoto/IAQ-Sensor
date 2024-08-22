@@ -1,15 +1,14 @@
 # Indoor Air Quality (IAQ) Sensor
 
 ## Project Description
-Low cost indoor air quality sensor, this sensor is capable of collecting various air quality parameters and
-send this data to database hosted by Microsoft Azure, where the data can be accessed by a website. This data is also broadcasted using Bluetooth and it can be collected using an app developed using MIT App Inventor, with this app, and multiple sensor is also possible to keep a track where an individual has been and collect the personal air quality. More info at [Project post](https://www.hackster.io/Diterragames/indoor-air-quality-sensors-iaq-27ae14#overview)
+Low-cost indoor air quality sensor, this sensor is capable of collecting various air quality parameters and sending this data to a database hosted by Microsoft Azure, where the data can be accessed by a website. This data is also broadcasted using Bluetooth and it can be collected using an app developed using MIT App Inventor, with this app, and multiple sensors, it is also possible to keep track of where an individual has been and collect the personal air quality. More info at [Project post](https://www.hackster.io/Diterragames/indoor-air-quality-sensors-iaq-27ae14#overview)
 
 ## Table of Contents
 - [Project Description](#project-description)
 - [Functionality](#functionality)
 - [Components](#components)
-- [Libraries](#libraries)
 - [Quick Setup](#quick-setup)
+- [Libraries](#libraries)
 - [Contact](#contact)
 
 
@@ -20,7 +19,7 @@ send this data to database hosted by Microsoft Azure, where the data can be acce
 - Measures Pressure (hPa) 
 - Measures VOCs (PPM)
 - Measures PM 1.0, 2.5, 10 (ug/m3)
-- Sends data though Bluetooth
+- Sends data through Bluetooth
 - Sends data to an online database
 - Website to visualize the data
 
@@ -36,7 +35,7 @@ send this data to database hosted by Microsoft Azure, where the data can be acce
 - [Lipo 1200mAh Battery](https://www.adafruit.com/product/258)
 
 ## Quick Setup
-Start by clonning this repository into your machine
+Start by cloning this repository into your machine
 #### Case and Circuit
 1. Print the enclosure files under CAD Files.
 2. Solder the sensors to the perfboard.
@@ -44,7 +43,7 @@ Start by clonning this repository into your machine
 4. Put the components inside their cases.
 #### Cloud
 1. Create a resource
-2. Create an Azure IoT device using symmetric key as authentications type.
+2. Create an Azure IoT device using symmetric key as authentication type.
 3. Save the _Device ID_ and _Primary Key_.
 4. Create a CosmosDB account.
 5. Create a CosmosDB routing endpoint.
@@ -57,7 +56,7 @@ Start by clonning this repository into your machine
 1. Install the esp32 board manager on version 2.0.17 by Espressif.
 2. Install the [libraries](#libraries) for the communication unit.
 3. Copy the folder _Uofc_Iaq_Library_ located Communication Unit\iaqazure\lib into your Arduino Libraries folder.
-4. Create a folder named _iaqwif_" in the Libraries folder, then copy the _IaqWifi.h_ from src folder, paste into the new folder, and rename it to _iaqwifi.h_
+4. Create a folder named _iaqwif_" in the Libraries folder, then copy the _IaqWifi.h_ from src folder, paste it into the new folder, and rename it to _iaqwifi.h_
 5. Open Communication Unit\iaqazure\src\azure\iot_configs.h change the wifi and Microsoft Azure settings.
 6. Open Communication Unit\iaqazure\iaqazure.ino and update the ID to match the ID in the sensor unit code.
 7. Upload the Communication unit code to the ESP-32 **S2**.
@@ -71,10 +70,10 @@ Start by clonning this repository into your machine
 2. Export the apk or use the [MIT Companion App](https://play.google.com/store/apps/details?id=edu.mit.appinventor.aicompanion3) to open the app.
 3. Allow any permission requests by the app.
 
-More details on how to set up available in this [post](https://www.hackster.io/Diterragames/indoor-air-quality-sensors-iaq-27ae14#overview) in hackster.io.
+More details on how to set up are available in this [post](https://www.hackster.io/Diterragames/indoor-air-quality-sensors-iaq-27ae14#overview) in hackster.io.
 
 ## Libraries
-#### Sensor Libraries
+#### Sensor Unit Libraries
 - SPI
 - Wire
 - Adafruit_Sensor
@@ -88,10 +87,14 @@ More details on how to set up available in this [post](https://www.hackster.io/D
 - BLE Device
 - BLE Advertising
 - Any dependencies for these libraries
-#### Communications Libraries
+#### Communication Unit Libraries
 - Azure SDK for C	
 - ArduinoJson  
 - Any dependencies for these libraries
+
+## Thanks
+I want to thank Dr. Simon Li who sponsored us by providing the needed components and accompanied the entire progress of this project. Thanks to my partner, Dr. Sheng Li, for participating in this project and assisting me. Last but not least the University of Calgary Electrical Makerspace for supplying us with materials, and allowing us to use its spaces and equipment to bring this project to reality.
+
 
 ## Contact
 diogo.goto@gmail.com
