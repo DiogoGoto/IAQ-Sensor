@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indoor Air Quality</title>
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #2980b9;
+            color: white;
+            margin: 0;
+        }
+        h2 {
+            text-align: center;
+            padding: 10px;
+            background-color: #29b96a;
+            color: white;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+
+        table,td,th {
+          border:1px solid black;
+          border-collapse: collapse;
+        }
+/*
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: right;
+            float: left;
+        }
+        input[type="datetime-local1"],
+        input[type="number"] {
+            width: 20%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        button[type="submit"] {
+            background-color: #5d6b74;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #d72d2d;
+        }            
+        */
+
+
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            form {
+                padding: 10px;
+            }
+
+            input[type="datetime-local"],
+            input[type="number"] {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+
+            button[type="submit"] {
+                padding: 8px 15px;
+            }
+
+            ul {
+                padding: 0 10px;
+            }
+
+            li {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Indoor Air Quality</h1>
+    
+    <div class="container">
+
+      <form id="currentvalue">
+        <h2>Current Value</h1>
+        <br>
+        <label for="rooms">Room Number:  </label>
+        <select name="rooms" id="rooms">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+        <!--button type="submit">Get</button-->
+        <button type="button" id="btn_getdata">Get</button>
+
+        <div>
+        <table id="datatable" style="width:100%">
+          <tr>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+          <tr>
+            <td>Time</th>
+            <td id="timedata" style="color:blue"></th>
+            <td></th>
+          </tr>
+          <tr>
+            <td>Temperature</th>
+            <td id="tdata" style="color:blue">0.0</th>
+            <td>degree</th>
+          </tr>
+          <tr>
+            <td>Relative Humidity</th>
+            <td id="rhdata" style="color:blue">0.0</th>
+            <td>%</th>
+          </tr>
+          <tr>
+            <td>CO2</th>
+            <td id="co2data" style="color:blue">0.0</th>
+            <td>ppm</th>
+          </tr>
+          <tr>
+            <td>eVOCs</th>
+            <td id="vocdata" style="color:blue">0.0</th>
+            <td>ppm</th>
+          </tr>
+          <tr>
+            <td>PM2.5</th>
+            <td id="pm25data" style="color:blue">0.0</th>
+            <td>ppm</th>
+          </tr>
+        </table>
+        </div>
+
+        <br>
+        <canvas id="myChart" style="width:100%;" height="300"></canvas> 
+
+        <!--script>
+
+            // Dynamically update the chart after every 2 seconds
+            setInterval(
+              function () {
+                getCdata();
+
+                didx++;
+                let idx=didx;
+                if (didx>=dlenmax){
+                  idx=dlenmax-1;
+                  xdata.shift();
+                  ydata1.shift();
+                  ydata2.shift();
+                  ydata3.shift();
+                }
+                xdata[idx]=didx;
+                ydata1[idx]=getRandomValue(0,20);
+                ydata2[idx]=getRandomValue(10,40);
+                ydata3[idx]=getRandomValue(30,70);
+
+                //let updatedData = Array(5).fill().map(getRandomValue);//Creating a array with 5 random value 
+                //pieChart.data.datasets[0].data = updatedData; //Update the chart object
+                mychart.update();//Update the chart
+              }, 
+              2000);
+    
+            //This function will return Random value 
+            const getRandomValue = (min,max) => {
+                //return Math.floor(Math.random()*f)
+                return Math.random()*(max-min+1)+min;
+            }
+        </script-->
+
+      </form>
+        <!-- Form for get_data_timerange -->
+        <form id="timerangeForm">
+            <h2>Exposure by Time Duration</h2><br>
+
+            <label for="start_time">From: </label>
+            <input type="datetime-local" id="start_time" />     
+            <label for="end_time">To: </label>
+            <input type="datetime-local" id="end_time" />
+            <label for="rooms">Room:   </label>
+            <!--<input type="number" id="sensorIdTimerange" required><br>-->
+            <select name="rooms" id="rooms2">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            
+            <!--button type="submit">Get</button-->
+            <button type="button" id="btn_getexposure">Add</button>
+            <button type="button" onclick="calExposure()">Calculate</button>
+            <button type="button" onclick="resetTable()">Reset</button>
+            <button type="button" id="btn_download">Download</button>
+            <br>
+            Average Exposure: <span id="avgexp" style="color:Red"></span>
+            
+            <br><br>
+
+            <div id="exposurediv">exposure data </div>
+
+        </form>    
+
+        <div id="dataDisplay">
+            <!-- Data will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+      //let xdata=[0.0];
+      let currentdata_time="2020-07-03T00:00:00"
+      let xdata=[currentdata_time];
+      let ydata1=[0.0];
+      let ydata2=[0.0];
+      let ydata3=[0.0];
+      let didx=0;
+      let dlenmax=100;
+      //const xValues = [100,200,300,400,500,600,700,800,900,1000];
+      let ctx = document.getElementById('myChart').getContext('2d');
+      
+      let mychart=new Chart(ctx, 
+      {
+        type: "line",
+        data: {
+          labels: xdata,//xValues,
+          datasets: [{ 
+            label: 'eVOCs',
+            data: ydata1,//[860,1140,1060,1060,1070,1110,1330,2210,7830,2478],
+            borderColor: "red",
+            borderWidth: 1,
+            fill: false
+          }, { 
+            label: 'T',
+            data: ydata2,//[1600,1700,1700,1900,2000,2700,4000,5000,6000,7000],
+            borderColor: "green",
+            borderWidth: 1,
+            fill: false
+          }, { 
+            label: 'RH',
+            data: ydata3,//[300,700,2000,5000,6000,4000,2000,1000,200,100],
+            borderColor: "blue",
+            borderWidth: 1,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          legend: {display: false},
+          scales: {
+            x: {
+                ticks: {
+                    //autoSkip: false,
+                    maxRotation: 90,
+                    minRotation: 90
+                }
+            }
+          }
+          // scales: {
+          //   xAxes: [{
+          //               type: 'time',
+          //               time: {
+          //                   displayFormats: {
+          //                       day: 'MMM DD, YYYY'
+          //                       // or any desired format
+          //                   }
+          //               }
+          //           }]
+          // }
+        }
+      });
+    </script>
+
+    <script>
+        const timerangeForm = document.getElementById("timerangeForm");
+        const latestForm = document.getElementById("latestForm");
+        const dataDisplay = document.getElementById("dataDisplay");
+        const expdiv = document.getElementById("exposurediv");
+
+        //const datatable = document.getElementById("datatable");
+
+        const btn_getdata = document.getElementById("btn_getdata")
+        btn_getdata.addEventListener("click", getDataNow)
+        const btn_getexposure = document.getElementById("btn_getexposure");
+        btn_getexposure.addEventListener("click", getExposure);
+        document.getElementById("btn_download").addEventListener("click", downloadData);
+        
+
+        // Timer;
+        setInterval( function () { getDataNow(""); }, 60*1000); // 1min;
+
+        function getDataNow(event)
+        {
+          getData("http://127.0.0.1:5000/get_data_now", {
+                //start_time: document.getElementById("start_time").value + ":00", // Adding seconds
+                //end_time: document.getElementById("end_time").value + ":00",     // Adding seconds
+                sensor_id: document.getElementById("rooms").value
+          }, "Average Readings",data=>{
+            //console.log(data);
+
+            if(data["datetime"] !=currentdata_time){
+              currentdata_time = data["datetime"];
+              console.log(currentdata_time);
+
+              // update table;
+              if(data["datetime"]) document.getElementById("timedata").innerHTML = data["datetime"].replace('T',' ');
+              if(data["T"]) document.getElementById("tdata").innerHTML = data["T"].toFixed(2);
+              if(data["RH"]) document.getElementById("rhdata").innerHTML = data["RH"].toFixed(2);
+              if(data["CO2"]) document.getElementById("co2data").innerHTML = data["CO2"].toFixed(2);
+              if(data["eVOC"]) document.getElementById("vocdata").innerHTML = data["eVOC"].toFixed(2);
+              if(data["PM25"]) document.getElementById("pm25data").innerHTML = data["PM25"].toFixed(2);
+              // update plots;
+              
+              let idx=didx;
+              if (didx>=dlenmax){
+                idx=dlenmax-1;
+                xdata.shift();
+                ydata1.shift();
+                ydata2.shift();
+                ydata3.shift();
+              }
+              //xdata[idx]=didx;
+              xdata[idx]=currentdata_time.substring(11);
+              ydata1[idx]=data["eVOC"].toFixed(2);
+              ydata2[idx]=data["T"].toFixed(2);//getRandomValue(10,40);
+              ydata3[idx]=data["RH"].toFixed(2);//getRandomValue(30,70);
+              didx++;
+
+              //let updatedData = Array(5).fill().map(getRandomValue);//Creating a array with 5 random value 
+              //pieChart.data.datasets[0].data = updatedData; //Update the chart object
+              mychart.update();//Update the chart
+            }
+          });
+        }
+        function getExposure(event)
+        {
+          // fetch data;
+          getData("http://127.0.0.1:5000/get_data_timerange", {
+                start_time: document.getElementById("start_time").value + ":00", // Adding seconds
+                end_time: document.getElementById("end_time").value + ":00",     // Adding seconds
+                sensor_id: document.getElementById("rooms2").value
+          }, "Average Readings",data=>{
+            console.log(data);
+            if(data){
+              updateTable(data);
+            }
+          });
+        }
+        function downloadData(event)
+        {
+          let s1=document.getElementById("start_time").value + ":00"; // Adding seconds
+          let s2=document.getElementById("end_time").value + ":00";     // Adding seconds
+          let s3=document.getElementById("rooms2").value;
+          getData("http://127.0.0.1:5000/get_data_download", {
+                start_time: s1,
+                end_time: s2,
+                sensor_id: s3
+          }, "Average Readings",data=>{
+            //console.log(data);
+            let s=s1+'_'+s2+'-'+s3+".txt";
+            console.log(s);
+            console.log(data.length);
+            let data2="";
+            for (let i=0; i<data.length; i++){
+              let s4=JSON.stringify(data[i]['Body'])+'\n';
+              //console.log(s4);
+              s4=s4.replace('{','');
+              s4=s4.replace('}','');
+              data2 +=s4;
+              //data2 = data2 + JSON.stringify(data[i]['Body'])+'\n';
+            }
+            //console.log(data2);
+            //data2=data2.replace('{','');
+            //data2=data2.replace('}','');
+
+            download(s,data2);
+          });
+        }
+        function download(filename, text) {
+          var element = document.createElement('a');
+          //text = JSON.stringify(text);
+          element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+          element.setAttribute('download', filename);
+
+          element.style.display = 'none';
+          document.body.appendChild(element);
+
+          element.click();
+
+          document.body.removeChild(element);
+        }
+        //This function will return Random value 
+        const getRandomValue = (min,max) => {
+            //return Math.floor(Math.random()*f)
+            return Math.random()*(max-min+1)+min;
+        }
+
+        function getCdata(){
+          //e.preventDefault();
+          document.getElementById("tdata").innerHTML = getRandomValue(20,23).toFixed(2);
+          document.getElementById("rhdata").innerHTML = getRandomValue(30,35).toFixed(2);
+          document.getElementById("co2data").innerHTML = getRandomValue(480,500).toFixed(2);
+          document.getElementById("vocdata").innerHTML = getRandomValue(0.0,2.0).toFixed(2);
+          //alert(tdata.innerHTML);
+          //console.log(tdata.innerHTML);
+          return false;
+        }
+
+        function calExposure(){
+          let tbl = document.getElementById("exptable");
+          let m =tbl.rows.length;
+          let n=tbl.rows[0].cells.length;
+
+          if(m<=1) return;
+
+          let ep=0.0;
+          for (var r =1; r<m; r++){
+            txt = tbl.rows[r].cells[3].innerHTML;
+            ep += parseFloat(txt);
+          }
+          document.getElementById("avgexp").innerHTML=ep/(m-1);
+          //alert(ep);
+        }
+
+        function resetTable()
+        {
+          expdiv.textContent='';
+          const tbl = document.createElement("table");
+          tbl.setAttribute("id","exptable");
+          tbl.setAttribute("width", "100%");
+
+          const tblBody = document.createElement("tbody");
+
+          // create head row;
+          row = document.createElement("tr");
+          cell = document.createElement("th");
+          cellText = document.createTextNode(`Start Time`);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("th");
+          cellText = document.createTextNode(`End Time`);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("th");
+          cellText = document.createTextNode(`Room Number`);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("th");
+          cellText = document.createTextNode(`Avg Exposure`);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          tblBody.appendChild(row);
+
+          // put the <tbody> in the <table>
+          tbl.appendChild(tblBody);
+          // appends <table> into <body>
+          //exptable.innerHTML=tbl;
+          expdiv.textContent='';
+          expdiv.appendChild(tbl);
+        }
+        
+        function updateTable(exposure)
+        {
+          let tbl = document.getElementById("exptable");
+          if(tbl==null)
+          {
+            resetTable();
+            tbl = document.getElementById("exptable");
+          }
+          let tblBody = tbl.getElementsByTagName('tbody')[0];
+
+          row = document.createElement("tr");
+          cell = document.createElement("td");
+          //cellText = document.createTextNode(`2024-06-15 00:00:00`);
+          txt = document.getElementById("start_time").value+":00";
+          if(txt==":00"){return}
+          cellText = document.createTextNode(txt);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("td");
+          //cellText = document.createTextNode(`2024-06-15 12:00:00`);
+          txt = document.getElementById("end_time").value+":00";
+          if(txt==":00"){return}
+          cellText = document.createTextNode(txt);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("td");
+          //cellText = document.createTextNode(`1`);
+          txt = document.getElementById("rooms2").value;
+          cellText = document.createTextNode(txt);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          cell = document.createElement("td");
+          //txt = getRandomValue(100,150).toFixed(2);
+          txt = exposure.toFixed(2);
+          cellText = document.createTextNode(txt);//`0.0`);
+          cell.appendChild(cellText);
+          row.appendChild(cell);
+          tblBody.appendChild(row);
+
+          // put the <tbody> in the <table>
+          tbl.appendChild(tblBody);
+          //exptable.textContent='';
+          //exptable.appendChild(tbl);
+        }
+
+        function getData(apiEndpoint, requestData, title, callfun) {
+          rdata=null;
+          fetch(apiEndpoint, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify(requestData)
+          })
+          //.then(response => {console.log(response.json());})
+          .then(response => response.json())
+          .then(data => {
+              //console.log(data);
+              //displayData(data, title);
+              //rdata= data;
+              //console.log(rdata);
+              callfun(data);
+          })
+          .catch(error => {
+              console.error("Error fetching data:", error);
+          });
+          //return rdata;
+      }
+
+        function displayData(data, title) {
+            let html = `<h2>${title}</h2><ul>`;
+
+            if (data["Room Number"]) {
+                html += `<li>Room Number: ${data["Room Number"]}</li>`;
+                delete data["Room Number"];
+            }
+
+            if (Array.isArray(data)) {
+                for (const item of data) {
+                    html += "<li>";
+                    for (const key in item) {
+                        html += `${key}: ${item[key]}, `;
+                    }
+                    html = html.slice(0, -2); // Remove trailing comma and space
+                    html += "</li>";
+                }
+            } else if (typeof data === "object") {
+                for (const key in data) {
+                    html += `<li>${key}: ${data[key]}</li>`;
+                }
+            } else {
+                html += `<li>${data}</li>`;
+            }
+
+            html += "</ul>";
+            dataDisplay.innerHTML = html;
+        }
+
+        // timerangeForm.addEventListener("submit", event => {
+        //     event.preventDefault();
+        //     // getData("http://127.0.0.1:5000/get_data_timerange", {
+        //     //     start_time: document.getElementById("start_time").value + ":00", // Adding seconds
+        //     //     end_time: document.getElementById("end_time").value + ":00",     // Adding seconds
+        //     //     sensor_id: document.getElementById("sensorIdTimerange").value
+        //     // }, "Average Readings");
+        // });
+
+        // latestForm.addEventListener("submit", event => {
+        //     event.preventDefault();
+        //     getData("http://127.0.0.1:5000/get_data_latest", {
+        //         sensor_id: document.getElementById("sensorIdLatest").value
+        //     }, "Latest Readings");
+        // });
+
+        
+
+
+    </script>
+</body>
+</html>
